@@ -1,0 +1,20 @@
+{
+  "name": "mauritius-dataset-gold",
+  "version": "1.0.0",
+  "description": "Automatically updated dataset of Mauritius gold prices scraped from the Bank of Mauritius website",
+  "type": "module",
+  "scripts": {
+    "fetch": "node fetch.mjs",
+    "generate-views": "node generate-views.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MrSunshyne/mauritius-dataset-gold.git"
+  },
+  "author": "Sandeep Ramgolam",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/MrSunshyne/mauritius-dataset-gold/issues"
+  },
+  "homepage": "https://github.com/MrSunshyne/mauritius-dataset-gold#readme"
+}
