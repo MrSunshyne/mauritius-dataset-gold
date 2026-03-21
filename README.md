@@ -1,3 +1,5 @@
+![Mauritius Gold Price Dataset](og-image.png)
+
 # Mauritius Gold Price Dataset
 
 Automatically updated dataset of Mauritius gold prices, scraped daily from the [Bank of Mauritius](https://www.bom.mu/industrial-gold) website. Historical data goes back to January 2004.
