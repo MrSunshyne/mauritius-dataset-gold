@@ -1,42 +1,42 @@
 {
-  "date": "2026-03-25",
-  "price_per_gram": 7178.59,
+  "date": "2026-03-26",
+  "price_per_gram": 7124.6,
   "karats": {
-    "24k": 7178.59,
-    "22k": 6580.37,
-    "21k": 6281.27,
-    "18k": 5383.94
+    "24k": 7124.6,
+    "22k": 6530.88,
+    "21k": 6234.03,
+    "18k": 5343.45
   },
   "forms": [
     {
       "form": "Grains",
       "weight_oz": 0.5,
       "weight_gm": 15.55,
-      "price_per_gm": 7178.59
+      "price_per_gm": 7124.6
     },
     {
       "form": "Grains",
       "weight_oz": 1,
       "weight_gm": 31.1,
-      "price_per_gm": 7178.59
+      "price_per_gm": 7124.6
     },
     {
       "form": "Bar",
       "weight_oz": 3.22,
       "weight_gm": 100,
-      "price_per_gm": 7175
+      "price_per_gm": 7121.04
     },
     {
       "form": "Bar",
       "weight_oz": 16.07,
       "weight_gm": 500,
-      "price_per_gm": 7175
+      "price_per_gm": 7121.04
     },
     {
       "form": "Bar",
       "weight_oz": 32.15,
       "weight_gm": 1000,
-      "price_per_gm": 7175
+      "price_per_gm": 7121.04
     }
   ]
 }
