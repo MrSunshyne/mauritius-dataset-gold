@@ -1,5 +1,34 @@
 [
   {
+    "date": "2026-05-20",
+    "denominations": [
+      {
+        "denomination": 100,
+        "weight_gm": 3.41,
+        "diameter_mm": 16.5,
+        "price": 29980
+      },
+      {
+        "denomination": 250,
+        "weight_gm": 8.51,
+        "diameter_mm": 22,
+        "price": 71700
+      },
+      {
+        "denomination": 500,
+        "weight_gm": 17.03,
+        "diameter_mm": 27,
+        "price": 140395
+      },
+      {
+        "denomination": 1000,
+        "weight_gm": 34.05,
+        "diameter_mm": 32.69,
+        "price": 280785
+      }
+    ]
+  },
+  {
     "date": "2026-03-20",
     "denominations": [
       {
