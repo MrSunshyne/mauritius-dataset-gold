@@ -1,8 +1,8 @@
 {
-  "total_entries": 5536,
+  "total_entries": 5537,
   "first_date": "2004-01-27",
-  "last_date": "2026-08-10",
-  "generated": "2026-08-10T11:13:51.138Z",
+  "last_date": "2026-08-11",
+  "generated": "2026-08-11T06:55:07.741Z",
   "years": {
     "2004": {
       "entries": 239,
@@ -247,15 +247,15 @@
       "change_pct": 57.6
     },
     "2026": {
-      "entries": 152,
+      "entries": 153,
       "first_date": "2026-01-05",
-      "last_date": "2026-08-10",
+      "last_date": "2026-08-11",
       "open": 6924.22,
-      "close": 6925.39,
+      "close": 7045.31,
       "min": 6375.11,
       "max": 8504.84,
-      "avg": 7258.4,
-      "change_pct": 0.02
+      "avg": 7257.01,
+      "change_pct": 1.75
     }
   }
 }
