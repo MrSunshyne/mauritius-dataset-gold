@@ -6,25 +6,25 @@
         "denomination": 100,
         "weight_gm": 3.41,
         "diameter_mm": 16.5,
-        "price": 28865
+        "price": 28935
       },
       {
         "denomination": 250,
         "weight_gm": 8.51,
         "diameter_mm": 22,
-        "price": 68920
+        "price": 69085
       },
       {
         "denomination": 500,
         "weight_gm": 17.03,
         "diameter_mm": 27,
-        "price": 134840
+        "price": 135165
       },
       {
         "denomination": 1000,
         "weight_gm": 34.05,
         "diameter_mm": 32.69,
-        "price": 269675
+        "price": 270330
       }
     ]
   },
