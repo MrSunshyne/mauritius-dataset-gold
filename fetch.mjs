@@ -1,8 +1,18 @@
 // Zero-dependency BOM gold price scraper
 // Fetches industrial gold and gold coin prices from bom.mu and outputs JSON
 
+import { readFileSync } from 'fs'
+import tls from 'tls'
+
 const GOLD_URL = 'https://www.bom.mu/industrial-gold'
 const COINS_URL = 'https://www.bom.mu/gold-coins'
+
+// bom.mu serves its certificate without the Sectigo intermediate. Browsers
+// fetch it on the fly, Node does not, so trust the bundled copy explicitly.
+tls.setDefaultCACertificates([
+  ...tls.getCACertificates('default'),
+  readFileSync(new URL('./certs/sectigo-public-server-authentication-ca-ev-r36.pem', import.meta.url), 'utf8'),
+])
 
 const MONTHS = {
   january: '01', february: '02', march: '03', april: '04',
