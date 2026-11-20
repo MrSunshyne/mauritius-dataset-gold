@@ -1,18 +1,42 @@
 // Zero-dependency BOM gold price scraper
 // Fetches industrial gold and gold coin prices from bom.mu and outputs JSON
 
-import { readFileSync } from 'fs'
+import { X509Certificate } from 'crypto'
 import tls from 'tls'
 
 const GOLD_URL = 'https://www.bom.mu/industrial-gold'
 const COINS_URL = 'https://www.bom.mu/gold-coins'
 
-// bom.mu serves its certificate without the Sectigo intermediate. Browsers
-// fetch it on the fly, Node does not, so trust the bundled copy explicitly.
-tls.setDefaultCACertificates([
-  ...tls.getCACertificates('default'),
-  readFileSync(new URL('./certs/sectigo-public-server-authentication-ca-ev-r36.pem', import.meta.url), 'utf8'),
-])
+// bom.mu serves its certificate without the intermediate, so Node rejects it.
+// Browsers download a missing intermediate from the address listed in the
+// certificate; do the same, and trust it only if it chains to a trusted root.
+async function trustMissingIntermediate(host) {
+  const { authorized, error, leaf } = await new Promise((resolve, reject) => {
+    const socket = tls.connect({ host, port: 443, servername: host, rejectUnauthorized: false }, () => {
+      resolve({ authorized: socket.authorized, error: socket.authorizationError, leaf: socket.getPeerX509Certificate() })
+      socket.end()
+    })
+    socket.on('error', reject)
+  })
+  if (authorized || error !== 'UNABLE_TO_VERIFY_LEAF_SIGNATURE') return
+
+  const issuerUrl = leaf.infoAccess?.match(/CA Issuers - URI:(\S+)/)?.[1]
+  if (!issuerUrl) throw new Error(`${host} sent an incomplete certificate chain without an issuer URL`)
+  console.log(`${host} sent an incomplete certificate chain, fetching ${issuerUrl}...`)
+  const response = await fetch(issuerUrl)
+  if (!response.ok) throw new Error(`HTTP ${response.status} fetching ${issuerUrl}`)
+  const intermediate = new X509Certificate(Buffer.from(await response.arrayBuffer()))
+
+  const roots = tls.getCACertificates('default')
+  const issuedByRoot = roots.some(pem => {
+    const root = new X509Certificate(pem)
+    return intermediate.checkIssued(root) && intermediate.verify(root.publicKey)
+  })
+  if (!intermediate.ca || !leaf.checkIssued(intermediate) || !leaf.verify(intermediate.publicKey) || !issuedByRoot) {
+    throw new Error(`Certificate from ${issuerUrl} does not complete the chain for ${host}`)
+  }
+  tls.setDefaultCACertificates([...roots, intermediate.toString()])
+}
 
 const MONTHS = {
   january: '01', february: '02', march: '03', april: '04',
@@ -240,6 +264,8 @@ async function main() {
   for (const arg of [from, to]) {
     if (arg && !/^\d{4}-\d{2}-\d{2}$/.test(arg)) throw new Error(`Invalid date "${arg}", expected YYYY-MM-DD`)
   }
+
+  await trustMissingIntermediate(new URL(GOLD_URL).hostname)
 
   // Read existing data
   let existingPrices = []
