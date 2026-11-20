@@ -18,6 +18,8 @@ Zero dependencies — uses Node.js built-in `fetch` to scrape the BOM gold price
 | [`data/coins-current.json`](#datacoins-currentjson) | <1 KB | Today's Dodo Gold Coin prices |
 | [`data/coins-timeseries.json`](#datacoins-timeseriesjson) | ~200 KB | Coin charts — flat date/price arrays per denomination, oldest-first |
 | [`data/coins.json`](#datacoinsjson) | ~2.9 MB | Dodo Gold Coin prices (22K) |
+| [`data/international-timeseries.json`](#datainternational-timeseriesjson) | ~220 KB | BOM price vs the world price in rupees — premium charts |
+| [`data/international.json`](#datainternationaljson) | ~680 KB | International gold price and USD/MUR rate per BOM date |
 | [`data/latest.json`](#datalatestjson) | <1 KB | Legacy format — raw BOM strings |
 | [`data/history/{date}.json`](#datahistorydatejson) | <1 KB | Daily snapshot in legacy format |
 
@@ -162,6 +164,34 @@ Coin prices as flat arrays for charting, oldest-first. One array per denominatio
 }
 ```
 
+## `data/international.json`
+
+For each BOM price date, the international gold price and the USD/MUR rate used to compare BOM's price with the world price. Sorted newest-first.
+
+- `comex_usd_per_oz`: COMEX gold futures (front month, `GC=F`) daily close from Yahoo Finance, in USD per troy ounce. BOM publishes in the Mauritius morning, so each date uses the previous New York session's close (`comex_date`).
+- `usd_mur`: BOM [consolidated indicative](https://www.bom.mu/markets/foreign-exchange/consolidated-indicative-exchange-rates) USD selling rate (TT/DD) on the same date.
+- All three are `null` on the few dates where either source has no data.
+
+```json
+[
+  { "date": "2026-11-20", "comex_date": "2026-11-19", "comex_usd_per_oz": 3685.5, "usd_mur": 47.4782 }
+]
+```
+
+## `data/international-timeseries.json`
+
+Flat arrays, oldest-first, for dates with both prices. `world_price_per_gram` is the international price converted to rupees per gram (`comex_usd_per_oz × usd_mur ÷ 31.1034768`), and `premium_pct` is how far BOM's Grains price is above it. Futures and timing differences make single days noisy (BOM prices in the morning, after the overnight move), so averages over a few weeks are more meaningful.
+
+```json
+{
+  "dates": ["2004-01-27", "2004-01-28", "..."],
+  "comex_usd_per_oz": [406.6, 410, "..."],
+  "usd_mur": [26.2943, 26.2381, "..."],
+  "world_price_per_gram": [343.73, 345.87, "..."],
+  "premium_pct": [6.03, 6.32, "..."]
+}
+```
+
 ## `data/latest.json`
 
 Legacy format preserving the original BOM strings exactly as scraped. Values are strings with comma formatting.
@@ -219,8 +249,9 @@ const data2024 = await fetch(
 1. Fetches the BOM industrial gold and gold coins HTML pages daily via GitHub Actions
 2. Parses the price tables using regex (no browser needed)
 3. Derives karat prices (22K, 21K, 18K) from the 24K reference using the standard formula
-4. Generates derived views (current, timeseries, index, yearly)
-5. Commits and pushes if the data changed
+4. Adds the international gold price (COMEX via Yahoo Finance) and BOM's USD rate for any date that doesn't have them yet
+5. Generates derived views (current, timeseries, index, yearly, coins, international)
+6. Commits and pushes if the data changed
 
 ## Running locally
 
