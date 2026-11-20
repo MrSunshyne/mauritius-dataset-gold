@@ -11,6 +11,11 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      FAILURE_TITLE: Scraper is failing
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
     steps:
       - name: Check out repo
         uses: actions/checkout@v4
@@ -31,3 +36,20 @@ jobs:
           timestamp=$(date -u)
           git commit -m "Latest data: ${timestamp}" || exit 0
           git push
+
+      - name: Open or update an issue if the scrape failed
+        if: failure()
+        run: |
+          number=$(gh issue list --state open --json number,title --jq '.[] | select(.title == env.FAILURE_TITLE) | .number' | head -1)
+          if [ -n "$number" ]; then
+            gh issue comment "$number" --body "Failed again: $RUN_URL"
+          else
+            gh issue create --title "$FAILURE_TITLE" --body "@${{ github.repository_owner }} the scheduled scrape failed: $RUN_URL. This issue closes itself after the next successful run."
+          fi
+
+      - name: Close the failure issue once the scrape works again
+        if: success()
+        run: |
+          for number in $(gh issue list --state open --json number,title --jq '.[] | select(.title == env.FAILURE_TITLE) | .number'); do
+            gh issue close "$number" --comment "Working again: $RUN_URL"
+          done
