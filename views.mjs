@@ -1,11 +1,12 @@
 // Shared view generation logic
-// Generates derived data views from prices.json and coins.json:
+// Generates derived data views from prices.json, coins.json and international.json:
 //   data/current.json         — latest single entry
 //   data/timeseries.json      — flat arrays for graphing
 //   data/index.json           — metadata + per-year summary stats
 //   data/yearly/{year}.json   — full entries grouped by year
 //   data/coins-current.json   — latest coin entry
 //   data/coins-timeseries.json — flat coin price arrays per denomination
+//   data/international-timeseries.json — world price in rupees and BOM premium
 
 import { writeFileSync, mkdirSync } from 'fs'
 
@@ -13,7 +14,7 @@ function round2(n) {
   return Math.round(n * 100) / 100
 }
 
-export function generateViews(prices, coins) {
+export function generateViews(prices, coins, international) {
   mkdirSync('./data/yearly', { recursive: true })
 
   // 1. current.json — most recent entry
@@ -97,7 +98,24 @@ export function generateViews(prices, coins) {
   }
   writeFileSync('./data/coins-timeseries.json', JSON.stringify(coinsTimeseries))
 
+  // 6. international-timeseries.json — BOM Grains price against the world
+  //    price converted to rupees per gram, oldest-first
+  const TROY_OUNCE_GRAMS = 31.1034768
+  const bomPrice = new Map(prices.map(p => [p.date, p.price_per_gram]))
+  const comparable = international
+    .filter(e => e.comex_usd_per_oz != null && bomPrice.has(e.date))
+    .reverse()
+  const worldPrices = comparable.map(e => round2(e.comex_usd_per_oz * e.usd_mur / TROY_OUNCE_GRAMS))
+  const internationalTimeseries = {
+    dates: comparable.map(e => e.date),
+    comex_usd_per_oz: comparable.map(e => e.comex_usd_per_oz),
+    usd_mur: comparable.map(e => e.usd_mur),
+    world_price_per_gram: worldPrices,
+    premium_pct: comparable.map((e, i) => round2((bomPrice.get(e.date) - worldPrices[i]) / worldPrices[i] * 100)),
+  }
+  writeFileSync('./data/international-timeseries.json', JSON.stringify(internationalTimeseries))
+
   // Summary
   const yearCount = Object.keys(byYear).length
-  console.log(`Generated views: current.json, timeseries.json, index.json, ${yearCount} yearly files, coins-current.json, coins-timeseries.json`)
+  console.log(`Generated views: current.json, timeseries.json, index.json, ${yearCount} yearly files, coins-current.json, coins-timeseries.json, international-timeseries.json`)
 }

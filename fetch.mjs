@@ -3,6 +3,7 @@
 
 import { X509Certificate } from 'crypto'
 import tls from 'tls'
+import { updateInternational } from './international.mjs'
 
 const GOLD_URL = 'https://www.bom.mu/industrial-gold'
 const COINS_URL = 'https://www.bom.mu/gold-coins'
@@ -311,9 +312,20 @@ async function main() {
     if (coins) console.log(`Written coins.json (${existingCoins.length} entries)`)
   }
 
+  // International price for the BOM premium; a failure here shouldn't stop
+  // the BOM data from being saved
+  let international
+  try {
+    international = await updateInternational(existingPrices)
+  }
+  catch (err) {
+    console.log(`::warning::Could not update international prices: ${err.message}`)
+    international = JSON.parse(fs.readFileSync('./data/international.json', 'utf8'))
+  }
+
   // Generate derived views
   const { generateViews } = await import('./views.mjs')
-  generateViews(existingPrices, existingCoins)
+  generateViews(existingPrices, existingCoins, international)
 }
 
 main().catch(err => {
