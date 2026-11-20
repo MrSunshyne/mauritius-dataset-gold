@@ -11,13 +11,13 @@ Zero dependencies — uses Node.js built-in `fetch` to scrape the BOM gold price
 | File | Size | Use case |
 |------|------|----------|
 | [`data/current.json`](#datacurrentjson) | <1 KB | Today's price — lightweight single entry |
-| [`data/timeseries.json`](#datatimeseriesjson) | ~271 KB | Charts — flat date/price arrays, oldest-first |
-| [`data/index.json`](#dataindexjson) | ~3 KB | Dashboards — per-year summary stats |
+| [`data/timeseries.json`](#datatimeseriesjson) | ~330 KB | Charts — flat date/price arrays, oldest-first |
+| [`data/index.json`](#dataindexjson) | ~6 KB | Dashboards — per-year summary stats |
 | [`data/yearly/{year}.json`](#datayearlyyearjson) | ~200 KB | Drill into a specific year |
-| [`data/prices.json`](#datapricesjson) | ~4.3 MB | Complete history with full detail |
+| [`data/prices.json`](#datapricesjson) | ~4.6 MB | Complete history with full detail |
 | [`data/coins-current.json`](#datacoins-currentjson) | <1 KB | Today's Dodo Gold Coin prices |
 | [`data/coins-timeseries.json`](#datacoins-timeseriesjson) | ~200 KB | Coin charts — flat date/price arrays per denomination, oldest-first |
-| [`data/coins.json`](#datacoinsjson) | ~2.9 MB | Dodo Gold Coin prices (22K) |
+| [`data/coins.json`](#datacoinsjson) | ~3.2 MB | Dodo Gold Coin prices (22K) |
 | [`data/international-timeseries.json`](#datainternational-timeseriesjson) | ~220 KB | BOM price vs the world price in rupees — premium charts |
 | [`data/international.json`](#datainternationaljson) | ~680 KB | International gold price and USD/MUR rate per BOM date |
 | [`data/latest.json`](#datalatestjson) | <1 KB | Legacy format — raw BOM strings |
