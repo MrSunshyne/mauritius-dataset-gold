@@ -202,8 +202,9 @@ const data2024 = await fetch(
 ## Running locally
 
 ```bash
-node fetch.mjs              # Scrape latest + regenerate views
-node generate-views.mjs     # Regenerate views from existing data
+node fetch.mjs                          # Scrape latest + regenerate views
+node fetch.mjs 2026-10-23 2026-11-19   # Backfill a date range (end defaults to today)
+node generate-views.mjs                 # Regenerate views from existing data
 ```
 
 ## Disclaimer
