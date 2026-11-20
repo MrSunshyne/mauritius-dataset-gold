@@ -274,14 +274,14 @@ async function main() {
 
     fs.writeFileSync('./data/prices.json', JSON.stringify(existingPrices, null, 2))
     fs.writeFileSync('./data/latest.json', JSON.stringify(gold.legacy))
-    fs.writeFileSync(`./data/history/${today}.json`, JSON.stringify(gold.legacy))
+    fs.writeFileSync(`./data/history/${gold.date}.json`, JSON.stringify(gold.legacy))
 
     if (coins) {
       fs.writeFileSync('./data/coins.json', JSON.stringify(existingCoins, null, 2))
     }
 
     console.log(`Written prices.json (${existingPrices.length} entries)`)
-    console.log(`Written latest.json and history/${today}.json`)
+    console.log(`Written latest.json and history/${gold.date}.json`)
     if (coins) console.log(`Written coins.json (${existingCoins.length} entries)`)
   }
 
