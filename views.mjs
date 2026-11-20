@@ -1,9 +1,11 @@
 // Shared view generation logic
-// Generates derived data views from prices.json:
-//   data/current.json        — latest single entry
-//   data/timeseries.json     — flat arrays for graphing
-//   data/index.json          — metadata + per-year summary stats
-//   data/yearly/{year}.json  — full entries grouped by year
+// Generates derived data views from prices.json and coins.json:
+//   data/current.json         — latest single entry
+//   data/timeseries.json      — flat arrays for graphing
+//   data/index.json           — metadata + per-year summary stats
+//   data/yearly/{year}.json   — full entries grouped by year
+//   data/coins-current.json   — latest coin entry
+//   data/coins-timeseries.json — flat coin price arrays per denomination
 
 import { writeFileSync, mkdirSync } from 'fs'
 
@@ -11,7 +13,7 @@ function round2(n) {
   return Math.round(n * 100) / 100
 }
 
-export function generateViews(prices) {
+export function generateViews(prices, coins) {
   mkdirSync('./data/yearly', { recursive: true })
 
   // 1. current.json — most recent entry
@@ -25,6 +27,7 @@ export function generateViews(prices) {
   const timeseries = {
     dates: reversed.map(p => p.date),
     price_per_gram: reversed.map(p => p.price_per_gram),
+    bar_price_per_gram: reversed.map(p => p.forms.find(f => f.form === 'Bar')?.price_per_gm ?? null),
     karats: {
       '24k': reversed.map(p => p.karats['24k']),
       '22k': reversed.map(p => p.karats['22k']),
@@ -78,7 +81,23 @@ export function generateViews(prices) {
   }
   writeFileSync('./data/index.json', JSON.stringify(index, null, 2))
 
+  // 5. coins-current.json + coins-timeseries.json — what the coins page needs
+  //    without downloading the full coins.json
+  if (coins.length > 0) {
+    writeFileSync('./data/coins-current.json', JSON.stringify(coins[0], null, 2))
+  }
+  const coinsOldestFirst = [...coins].reverse()
+  const denominations = [...new Set(coins.flatMap(c => c.denominations.map(d => d.denomination)))].sort((a, b) => a - b)
+  const coinsTimeseries = {
+    dates: coinsOldestFirst.map(c => c.date),
+    prices: Object.fromEntries(denominations.map(denomination => [
+      denomination,
+      coinsOldestFirst.map(c => c.denominations.find(d => d.denomination === denomination)?.price ?? null),
+    ])),
+  }
+  writeFileSync('./data/coins-timeseries.json', JSON.stringify(coinsTimeseries))
+
   // Summary
   const yearCount = Object.keys(byYear).length
-  console.log(`Generated views: current.json, timeseries.json, index.json, ${yearCount} yearly files`)
+  console.log(`Generated views: current.json, timeseries.json, index.json, ${yearCount} yearly files, coins-current.json, coins-timeseries.json`)
 }

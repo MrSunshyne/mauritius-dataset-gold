@@ -15,6 +15,8 @@ Zero dependencies — uses Node.js built-in `fetch` to scrape the BOM gold price
 | [`data/index.json`](#dataindexjson) | ~3 KB | Dashboards — per-year summary stats |
 | [`data/yearly/{year}.json`](#datayearlyyearjson) | ~200 KB | Drill into a specific year |
 | [`data/prices.json`](#datapricesjson) | ~4.3 MB | Complete history with full detail |
+| [`data/coins-current.json`](#datacoins-currentjson) | <1 KB | Today's Dodo Gold Coin prices |
+| [`data/coins-timeseries.json`](#datacoins-timeseriesjson) | ~200 KB | Coin charts — flat date/price arrays per denomination, oldest-first |
 | [`data/coins.json`](#datacoinsjson) | ~2.9 MB | Dodo Gold Coin prices (22K) |
 | [`data/latest.json`](#datalatestjson) | <1 KB | Legacy format — raw BOM strings |
 | [`data/history/{date}.json`](#datahistorydatejson) | <1 KB | Daily snapshot in legacy format |
@@ -52,12 +54,13 @@ The most recent price entry. Use this if you only need today's gold price.
 
 ## `data/timeseries.json`
 
-Flat arrays optimized for charting. Dates are oldest-first for natural left-to-right plotting. Includes all karat values as parallel arrays.
+Flat arrays optimized for charting. Dates are oldest-first for natural left-to-right plotting. `price_per_gram` is the Grains price (the 24K reference); `bar_price_per_gram` is the Bar price. Includes all karat values as parallel arrays.
 
 ```json
 {
   "dates": ["2004-01-27", "2004-01-28", "2004-01-29", "..."],
-  "price_per_gram": [364.47, 365.12, 366.80, "..."],
+  "price_per_gram": [364.47, 367.74, 368.63, "..."],
+  "bar_price_per_gram": [363.73, 367.00, 368.10, "..."],
   "karats": {
     "24k": [364.47, 365.12, "..."],
     "22k": [334.10, 334.69, "..."],
@@ -139,6 +142,26 @@ Dodo Gold Coin prices (22K) by denomination, scraped from the [BOM Gold Coins](h
 ]
 ```
 
+## `data/coins-current.json`
+
+The most recent entry from `coins.json`, in the same format.
+
+## `data/coins-timeseries.json`
+
+Coin prices as flat arrays for charting, oldest-first. One array per denomination, parallel to `dates`; `null` where BOM did not list that denomination.
+
+```json
+{
+  "dates": ["2004-01-27", "2004-01-28", "..."],
+  "prices": {
+    "100": [1435, 1445, "..."],
+    "250": [3480, 3510, "..."],
+    "500": [6900, 6960, "..."],
+    "1000": [13645, 13775, "..."]
+  }
+}
+```
+
 ## `data/latest.json`
 
 Legacy format preserving the original BOM strings exactly as scraped. Values are strings with comma formatting.
@@ -152,7 +175,7 @@ Legacy format preserving the original BOM strings exactly as scraped. Values are
 
 ## `data/history/{date}.json`
 
-Daily snapshots in `YYYY-MM-DD.json` format, using the same legacy format as `latest.json`. One file per business day going back to 2004-01-27. Useful for tracking what BOM published on a specific date.
+Daily snapshots in `YYYY-MM-DD.json` format, named after the date BOM published the prices, using the same legacy format as `latest.json`. One file per business day going back to 2004-01-27. Useful for tracking what BOM published on a specific date.
 
 ```
 data/history/2024-01-03.json
