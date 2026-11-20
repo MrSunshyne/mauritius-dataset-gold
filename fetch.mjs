@@ -313,7 +313,7 @@ async function main() {
 
   // Generate derived views
   const { generateViews } = await import('./views.mjs')
-  generateViews(existingPrices)
+  generateViews(existingPrices, existingCoins)
 }
 
 main().catch(err => {
