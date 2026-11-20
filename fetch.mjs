@@ -35,19 +35,22 @@ function parseDate(raw) {
   return `${yearStr}-${month}-${dayStr.padStart(2, '0')}`
 }
 
-function extractDate(html) {
-  // Look for date in various BOM page formats
-  const patterns = [
-    /<span class="date-display-single"[^>]*>([^<]+)<\/span>/i,
-    /datetime="[^"]*"[^>]*>([^<]+)</i,
-    /(\d{1,2}\s+(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4})/i,
-  ]
+function extractView(html, viewId) {
+  // Scope parsing to the price view: the sidebar has its own dates (e.g. the
+  // Key Rate decision date) and tables (exchange rates)
+  const start = html.indexOf(`view-id-${viewId}`)
+  if (start === -1) return null
+  const end = html.indexOf('</section>', start)
+  return html.slice(start, end === -1 ? undefined : end)
+}
 
-  for (const pattern of patterns) {
-    const match = html.match(pattern)
-    if (match) return match[1].trim()
-  }
-  return null
+function extractDate(viewHtml) {
+  // The view header holds the publication date, e.g. "20 March 2026"
+  const header = viewHtml.match(/<div class="view-header">([\s\S]*?)<\/div>/i)
+  if (!header) return null
+  const text = header[1].replace(/<[^>]*>/g, ' ')
+  const match = text.match(/\d{1,2}\s+(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4}/i)
+  return match ? match[0] : null
 }
 
 function extractTable(html) {
@@ -97,13 +100,15 @@ async function fetchGoldPrices() {
   if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`)
   const html = await response.text()
 
-  const dateRaw = extractDate(html)
+  const view = extractView(html, 'industrial_gold')
+  if (!view) throw new Error('Could not find price view on industrial gold page')
+
+  const dateRaw = extractDate(view)
   if (!dateRaw) throw new Error('Could not find date on industrial gold page')
   const date = parseDate(dateRaw)
   if (!date) throw new Error(`Could not parse date: ${dateRaw}`)
 
-  // Use first table only (page also has an exchange rates table)
-  const rows = extractFirstTable(html)
+  const rows = extractFirstTable(view)
   console.log(`Found ${rows.length} table rows on industrial gold page`)
 
   // Filter to data rows (skip headers). Data rows have 4 cells with numeric price.
@@ -159,13 +164,15 @@ async function fetchCoinPrices() {
   if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`)
   const html = await response.text()
 
-  const dateRaw = extractDate(html)
+  const view = extractView(html, 'gold_coins')
+  if (!view) throw new Error('Could not find price view on gold coins page')
+
+  const dateRaw = extractDate(view)
   if (!dateRaw) throw new Error('Could not find date on gold coins page')
   const date = parseDate(dateRaw)
   if (!date) throw new Error(`Could not parse date: ${dateRaw}`)
 
-  // Extract only the first table (coins); second table is exchange rates
-  const rows = extractFirstTable(html)
+  const rows = extractFirstTable(view)
   console.log(`Found ${rows.length} table rows on gold coins page`)
 
   // Columns: Denomination | Weight (gm) | Diameter (mm) | Price (Rs)
