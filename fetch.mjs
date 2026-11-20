@@ -94,19 +94,36 @@ function round2(n) {
   return Math.round(n * 100) / 100
 }
 
-async function fetchGoldPrices() {
-  console.log(`Fetching ${GOLD_URL}...`)
-  const response = await fetch(GOLD_URL)
+async function fetchPage(url, dateFilter, date) {
+  const target = new URL(url)
+  if (date) {
+    // BOM date filter expects DD-MM-YYYY
+    const [y, m, d] = date.split('-')
+    target.searchParams.set(`${dateFilter}[value][date]`, `${d}-${m}-${y}`)
+  }
+  console.log(`Fetching ${target}...`)
+  const response = await fetch(target)
   if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-  const html = await response.text()
+  return response.text()
+}
+
+// Without a date, fetches the latest published prices. With a date
+// (YYYY-MM-DD), fetches that day and returns null if BOM published nothing.
+async function fetchGoldPrices(requestedDate) {
+  const html = await fetchPage(GOLD_URL, 'field_transaction_date_goldind_value', requestedDate)
 
   const view = extractView(html, 'industrial_gold')
   if (!view) throw new Error('Could not find price view on industrial gold page')
 
   const dateRaw = extractDate(view)
+  if (!dateRaw && requestedDate) {
+    console.log(`No gold prices published on ${requestedDate}. Skipping.`)
+    return null
+  }
   if (!dateRaw) throw new Error('Could not find date on industrial gold page')
   const date = parseDate(dateRaw)
   if (!date) throw new Error(`Could not parse date: ${dateRaw}`)
+  if (requestedDate && date !== requestedDate) throw new Error(`Asked for ${requestedDate}, got ${date}`)
 
   const rows = extractFirstTable(view)
   console.log(`Found ${rows.length} table rows on industrial gold page`)
@@ -158,19 +175,21 @@ async function fetchGoldPrices() {
   return { date, dateRaw, clean, legacy }
 }
 
-async function fetchCoinPrices() {
-  console.log(`Fetching ${COINS_URL}...`)
-  const response = await fetch(COINS_URL)
-  if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-  const html = await response.text()
+async function fetchCoinPrices(requestedDate) {
+  const html = await fetchPage(COINS_URL, 'field_transaction_date_goldcoins_value', requestedDate)
 
   const view = extractView(html, 'gold_coins')
   if (!view) throw new Error('Could not find price view on gold coins page')
 
   const dateRaw = extractDate(view)
+  if (!dateRaw && requestedDate) {
+    console.log(`No coin prices published on ${requestedDate}. Skipping.`)
+    return null
+  }
   if (!dateRaw) throw new Error('Could not find date on gold coins page')
   const date = parseDate(dateRaw)
   if (!date) throw new Error(`Could not parse date: ${dateRaw}`)
+  if (requestedDate && date !== requestedDate) throw new Error(`Asked for ${requestedDate}, got ${date}`)
 
   const rows = extractFirstTable(view)
   console.log(`Found ${rows.length} table rows on gold coins page`)
@@ -196,18 +215,31 @@ async function fetchCoinPrices() {
   return { date, clean: { date, denominations } }
 }
 
+function datesBetween(from, to) {
+  const dates = []
+  for (let d = new Date(from); d <= new Date(to); d.setUTCDate(d.getUTCDate() + 1)) {
+    dates.push(d.toISOString().slice(0, 10))
+  }
+  return dates
+}
+
+// Insert or replace the entry for its date, keeping newest first
+function upsert(list, entry) {
+  return [entry, ...list.filter(e => e.date !== entry.date)]
+    .sort((a, b) => b.date.localeCompare(a.date))
+}
+
 async function main() {
   const fs = await import('fs')
 
   fs.mkdirSync('./data/history', { recursive: true })
 
-  const gold = await fetchGoldPrices()
-  if (!gold) {
-    console.log('No gold data available today. Exiting.')
-    return
+  // Optional date range to backfill missed days: node fetch.mjs FROM [TO]
+  const today = new Date().toISOString().slice(0, 10)
+  const [from, to = today] = process.argv.slice(2)
+  for (const arg of [from, to]) {
+    if (arg && !/^\d{4}-\d{2}-\d{2}$/.test(arg)) throw new Error(`Invalid date "${arg}", expected YYYY-MM-DD`)
   }
-
-  const coins = await fetchCoinPrices()
 
   // Read existing data
   let existingPrices = []
@@ -215,38 +247,43 @@ async function main() {
   try { existingPrices = JSON.parse(fs.readFileSync('./data/prices.json', 'utf8')) } catch {}
   try { existingCoins = JSON.parse(fs.readFileSync('./data/coins.json', 'utf8')) } catch {}
 
-  // Deduplicate by date — only add if this date is new
-  if (!existingPrices.some(e => e.date === gold.date)) {
-    existingPrices.unshift(gold.clean)
-  } else {
-    // Update existing entry for today
-    existingPrices = existingPrices.map(e => e.date === gold.date ? gold.clean : e)
-  }
-  existingPrices.sort((a, b) => b.date.localeCompare(a.date))
-
-  if (coins) {
-    if (!existingCoins.some(e => e.date === coins.date)) {
-      existingCoins.unshift(coins.clean)
-    } else {
-      existingCoins = existingCoins.map(e => e.date === coins.date ? coins.clean : e)
+  if (from) {
+    for (const date of datesBetween(from, to)) {
+      const gold = await fetchGoldPrices(date)
+      if (gold) {
+        existingPrices = upsert(existingPrices, gold.clean)
+        fs.writeFileSync(`./data/history/${date}.json`, JSON.stringify(gold.legacy))
+      }
+      const coins = await fetchCoinPrices(date)
+      if (coins) existingCoins = upsert(existingCoins, coins.clean)
     }
-    existingCoins.sort((a, b) => b.date.localeCompare(a.date))
-  }
-
-  // Write outputs
-  const today = new Date().toISOString().slice(0, 10)
-
-  fs.writeFileSync('./data/prices.json', JSON.stringify(existingPrices, null, 2))
-  fs.writeFileSync('./data/latest.json', JSON.stringify(gold.legacy))
-  fs.writeFileSync(`./data/history/${today}.json`, JSON.stringify(gold.legacy))
-
-  if (coins) {
+    fs.writeFileSync('./data/prices.json', JSON.stringify(existingPrices, null, 2))
     fs.writeFileSync('./data/coins.json', JSON.stringify(existingCoins, null, 2))
-  }
+    console.log(`Backfilled ${from} to ${to}: prices.json (${existingPrices.length} entries), coins.json (${existingCoins.length} entries)`)
+  } else {
+    const gold = await fetchGoldPrices()
+    if (!gold) {
+      console.log('No gold data available today. Exiting.')
+      return
+    }
 
-  console.log(`Written prices.json (${existingPrices.length} entries)`)
-  console.log(`Written latest.json and history/${today}.json`)
-  if (coins) console.log(`Written coins.json (${existingCoins.length} entries)`)
+    const coins = await fetchCoinPrices()
+
+    existingPrices = upsert(existingPrices, gold.clean)
+    if (coins) existingCoins = upsert(existingCoins, coins.clean)
+
+    fs.writeFileSync('./data/prices.json', JSON.stringify(existingPrices, null, 2))
+    fs.writeFileSync('./data/latest.json', JSON.stringify(gold.legacy))
+    fs.writeFileSync(`./data/history/${today}.json`, JSON.stringify(gold.legacy))
+
+    if (coins) {
+      fs.writeFileSync('./data/coins.json', JSON.stringify(existingCoins, null, 2))
+    }
+
+    console.log(`Written prices.json (${existingPrices.length} entries)`)
+    console.log(`Written latest.json and history/${today}.json`)
+    if (coins) console.log(`Written coins.json (${existingCoins.length} entries)`)
+  }
 
   // Generate derived views
   const { generateViews } = await import('./views.mjs')
