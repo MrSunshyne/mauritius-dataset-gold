@@ -16,5 +16,6 @@
   "bugs": {
     "url": "https://github.com/MrSunshyne/mauritius-dataset-gold/issues"
   },
-  "homepage": "https://github.com/MrSunshyne/mauritius-dataset-gold#readme"
+  "homepage": "https://github.com/MrSunshyne/mauritius-dataset-gold#readme",
+  "packageManager": "pnpm@12.21.0"
 }
