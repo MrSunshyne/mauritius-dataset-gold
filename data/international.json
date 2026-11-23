@@ -1,5 +1,11 @@
 [
   {
+    "date": "2026-11-23",
+    "comex_date": "2026-11-20",
+    "comex_usd_per_oz": 3515.4,
+    "usd_mur": 47.4762
+  },
+  {
     "date": "2026-11-20",
     "comex_date": "2026-11-19",
     "comex_usd_per_oz": 3685.5,
