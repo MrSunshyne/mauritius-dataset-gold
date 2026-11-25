@@ -1,29 +1,29 @@
 {
-  "date": "2026-11-24",
+  "date": "2026-11-25",
   "denominations": [
     {
       "denomination": 100,
       "weight_gm": 3.41,
       "diameter_mm": 16.5,
-      "price": 24415
+      "price": 23835
     },
     {
       "denomination": 250,
       "weight_gm": 8.51,
       "diameter_mm": 22,
-      "price": 57795
+      "price": 56340
     },
     {
       "denomination": 500,
       "weight_gm": 17.03,
       "diameter_mm": 27,
-      "price": 112585
+      "price": 109675
     },
     {
       "denomination": 1000,
       "weight_gm": 34.05,
       "diameter_mm": 32.69,
-      "price": 225165
+      "price": 219350
     }
   ]
 }
